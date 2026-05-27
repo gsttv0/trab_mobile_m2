@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "nome": "Salada Proteica",
+    "preco": 34.90,
+    "url_imagem": "http://10.0.2.2:8080/foto1.jpg"
+  },
+  {
+    "id": 2,
+    "nome": "Pizza",
+    "preco": 49.90,
+    "url_imagem": "http://10.0.2.2:8080/foto2.jpg"
+  },
+  {
+    "id": 3,
+    "nome": "Fatia de Bolo",
+    "preco": 24.90,
+    "url_imagem": "http://10.0.2.2:8080/foto3.jpg"
+  },
+  {
+    "id": 4,
+    "nome": "Macarrão",
+    "preco": 37.90,
+    "url_imagem": "http://10.0.2.2:8080/foto4.jpg"
+  }
+]
