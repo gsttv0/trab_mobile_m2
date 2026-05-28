@@ -1,25 +1,27 @@
 EXPLICACAO DO APLICATIVO CARDAPIO
 
 OBJETIVO DO APP
-O aplicativo mostra um cardapio de restaurante. Quando abre, ele tenta buscar os dados de um JSON remoto. Esse JSON vem do servidor local na pasta servidor-cardapio. Cada item possui id, nome, preco e url da imagem. Se a carga online funcionar, o app salva os dados no SQLite e salva as imagens no sistema de arquivos. Se o servidor estiver desligado ou o app estiver offline, ele le os dados locais e mostra o preco como "a consultar".
+O aplicativo mostra um cardapio de restaurante. Quando abre com internet, ele inicia um servidor mock HTTP dentro do proprio app e busca os dados por requisicao HTTP. Esse mock entrega um JSON com id, nome, preco e url da imagem. As imagens ficam em assets e tambem sao obtidas por HTTP pelo servidor mock. Se a carga online funcionar, o app salva os dados no SQLite e salva as imagens no sistema de arquivos. Se o app estiver offline, ele le os dados locais e mostra o preco como "a consultar".
 
 ARQUIVOS PRINCIPAIS
 MainActivity.kt: controla a tela, busca o JSON, baixa imagens, chama o SQLite e monta os cards visuais.
 CardapioDBHelper.kt: cria e manipula o banco SQLite.
+MockCardapioServer.kt: cria um servidor HTTP mock dentro do app para entregar o JSON e as imagens.
 activity_main.xml: tem o ScrollView e o LinearLayout onde os itens sao adicionados.
 AndroidManifest.xml: declara permissao de internet e permissao para verificar estado de rede.
-cardapio.json: arquivo remoto simulado com os dados do cardapio.
+assets/foto1.jpg a assets/foto4.jpg: imagens usadas pelo mock HTTP interno.
 
 FLUXO GERAL
 1. A tela abre e executa onCreate.
 2. O app pega o LinearLayout do XML e prepara o banco SQLite.
-3. A funcao isOnline verifica se existe conexao.
-4. Se houver conexao, o app chama carregarDadosOnline.
-5. carregarDadosOnline baixa o JSON, percorre os itens, baixa as imagens e salva tudo localmente.
-6. Depois mostra os cards com nome, foto e preco.
-7. Se houver erro ou estiver offline, o app chama carregarDadosOffline.
-8. carregarDadosOffline le o SQLite e mostra as imagens salvas.
-9. No modo offline, o preco real nao aparece; aparece "a consultar".
+3. O app verifica se existe conexao de internet.
+4. Se houver internet, ele inicia o MockCardapioServer.
+5. O app chama carregarDadosOnline e acessa o JSON por HTTP em 127.0.0.1.
+6. carregarDadosOnline baixa o JSON, percorre os itens, baixa as imagens e salva tudo localmente.
+7. Depois mostra os cards com nome, foto e preco.
+8. Se nao houver internet, o app chama carregarDadosOffline.
+9. carregarDadosOffline le o SQLite e mostra as imagens salvas.
+10. No modo offline, o preco real nao aparece; aparece "a consultar".
 
 MAINACTIVITY.KT EM ORDEM
 package com.example.trab_mobile_m2
@@ -55,8 +57,8 @@ Variavel que acessa o banco SQLite.
 private val mainHandler = Handler(Looper.getMainLooper())
 Cria um Handler da thread principal. Ele permite atualizar a interface depois que a thread de internet terminar.
 
-private val cardapioUrl = "http://10.0.2.2:8080/cardapio.json"
-Guarda o endereco do JSON. No emulador Android, 10.0.2.2 aponta para o computador onde o servidor local esta rodando.
+private lateinit var cardapioUrl: String
+Guarda o endereco do JSON. Ele recebe o endereco criado pelo servidor mock interno.
 
 onCreate
 E a primeira funcao executada quando a tela abre.
@@ -73,32 +75,20 @@ Procura no XML o LinearLayout com esse id e guarda na variavel.
 dbHelper = CardapioDBHelper(this)
 Cria o objeto que manipula o banco SQLite.
 
-if (isOnline())
-Chama a funcao que verifica internet. Se retornar true, carrega online.
+temConexaoInternet()
+Verifica se existe rede com internet. Se existir, o app usa o mock HTTP interno. Se nao existir, usa o cache local.
+
+mockServer = MockCardapioServer(this)
+Cria o servidor mock HTTP dentro do app.
+
+mockServer.start()
+Inicia o servidor mock.
+
+cardapioUrl = mockServer!!.getCardapioUrl()
+Pega a URL do JSON mock. A URL usa 127.0.0.1 com uma porta interna criada automaticamente.
 
 carregarDadosOnline()
-Inicia a carga pelo servidor.
-
-carregarDadosOffline()
-Inicia a carga pelo banco local quando nao ha internet.
-
-isOnline
-Verifica se existe uma rede ativa com capacidade de internet.
-
-getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-Pega o servico de conectividade do Android e converte para ConnectivityManager.
-
-val network = connectivityManager.activeNetwork
-Pega a rede ativa atual.
-
-if (network == null) return false
-Se nao existir rede ativa, retorna falso.
-
-val activeNetwork = connectivityManager.getNetworkCapabilities(network)
-Pega as capacidades da rede, como ter acesso a internet.
-
-return activeNetwork.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-Retorna verdadeiro se a rede tiver capacidade de internet.
+Inicia a carga pelo mock HTTP.
 
 carregarDadosOnline
 Funcao responsavel por buscar dados no servidor.
@@ -387,15 +377,35 @@ LinearLayout container_cardapio e o espaco onde os cards sao adicionados por cod
 CARDAPIO.JSON
 E o servico remoto simulado. Possui 4 registros, cumprindo o minimo pedido. Cada registro tem id, nome, preco e url_imagem.
 
+MOCKCARDAPIOSERVER.KT
+Essa classe cria um servidor HTTP simples dentro do app.
+
+ServerSocket(0, 50, localAddress)
+Cria um servidor local. O valor 0 faz o Android escolher uma porta livre automaticamente.
+
+getCardapioUrl()
+Retorna a URL do JSON mock, por exemplo http://127.0.0.1:porta/cardapio.json.
+
+atenderCliente
+Le a requisicao HTTP recebida e decide se deve devolver o JSON ou uma imagem.
+
+montarJsonCardapio
+Monta o JSON do cardapio com 4 registros e URLs das imagens.
+
+enviarAsset
+Le as imagens da pasta assets e devolve por HTTP.
+
+enviarResposta
+Monta a resposta HTTP com status, tipo de conteudo e corpo da resposta.
+
 COMO DEMONSTRAR
-1. Abrir a pasta servidor-cardapio.
-2. Rodar npx http-server -p 8080.
-3. Abrir o app no emulador.
-4. Mostrar que ele carrega nome, preco e foto.
-5. Fechar o servidor.
-6. Abrir o app novamente.
-7. Mostrar que os dados continuam aparecendo pelo SQLite e pelas imagens locais.
-8. Mostrar que no modo offline o preco aparece como "a consultar".
+1. Abrir o app pelo Android Studio com internet ligada.
+2. Mostrar que ele carrega nome, preco e foto pelo mock HTTP interno.
+3. Fechar o app.
+4. Desligar a internet do emulador.
+5. Abrir o app novamente.
+6. Mostrar que os dados continuam aparecendo pelo SQLite e pelas imagens locais.
+7. Mostrar que no modo offline o preco aparece como "a consultar".
 
 FRASE RESUMO PARA APRESENTAR
-O app possui dois fluxos. No fluxo online, ele baixa o JSON remoto, le os pratos, baixa as fotos e salva tudo localmente. No fluxo offline, ele le os dados do SQLite, usa as imagens salvas no sistema de arquivos e esconde o preco, exibindo "a consultar".
+O app possui dois fluxos. No fluxo online, ele usa um servidor mock HTTP interno para entregar JSON e imagens, le os pratos, baixa as fotos e salva tudo localmente. No fluxo offline, ele le os dados do SQLite, usa as imagens salvas no sistema de arquivos e esconde o preco, exibindo "a consultar".

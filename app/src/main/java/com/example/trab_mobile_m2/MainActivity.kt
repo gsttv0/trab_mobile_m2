@@ -38,8 +38,9 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var containerCardapio: LinearLayout
     private lateinit var dbHelper: CardapioDBHelper
+    private var mockServer: MockCardapioServer? = null
     private val mainHandler = Handler(Looper.getMainLooper())
-    private val cardapioUrl = "http://10.0.2.2:8080/cardapio.json"
+    private lateinit var cardapioUrl: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,7 +49,10 @@ class MainActivity : AppCompatActivity() {
         containerCardapio = findViewById(R.id.container_cardapio)
         dbHelper = CardapioDBHelper(this)
 
-        if (isOnline()) {
+        if (temConexaoInternet()) {
+            mockServer = MockCardapioServer(this)
+            mockServer!!.start()
+            cardapioUrl = mockServer!!.getCardapioUrl()
             carregarDadosOnline()
         } else {
             Toast.makeText(this, "Offline: carregando cache local.", Toast.LENGTH_SHORT).show()
@@ -56,7 +60,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun isOnline(): Boolean {
+    override fun onDestroy() {
+        super.onDestroy()
+        mockServer?.stop()
+    }
+
+    private fun temConexaoInternet(): Boolean {
         val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val network = connectivityManager.activeNetwork
 

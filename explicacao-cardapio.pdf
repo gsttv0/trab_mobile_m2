@@ -9,7 +9,7 @@ endobj
 << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 19 0 R >> >> /Contents 4 0 R >>
 endobj
 4 0 obj
-<< /Length 2758 >>
+<< /Length 2874 >>
 stream
 BT
 /F1 10 Tf
@@ -21,15 +21,17 @@ T*
 T*
 (OBJETIVO DO APP) Tj
 T*
-(O aplicativo mostra um cardapio de restaurante. Quando abre, ele tenta buscar os dados de um) Tj
+(O aplicativo mostra um cardapio de restaurante. Quando abre com internet, ele inicia um) Tj
 T*
-(JSON remoto. Esse JSON vem do servidor local na pasta servidor-cardapio. Cada item possui id,) Tj
+(servidor mock HTTP dentro do proprio app e busca os dados por requisicao HTTP. Esse mock) Tj
 T*
-(nome, preco e url da imagem. Se a carga online funcionar, o app salva os dados no SQLite e) Tj
+(entrega um JSON com id, nome, preco e url da imagem. As imagens ficam em assets e tambem sao) Tj
 T*
-(salva as imagens no sistema de arquivos. Se o servidor estiver desligado ou o app estiver) Tj
+(obtidas por HTTP pelo servidor mock. Se a carga online funcionar, o app salva os dados no) Tj
 T*
-(offline, ele le os dados locais e mostra o preco como "a consultar".) Tj
+(SQLite e salva as imagens no sistema de arquivos. Se o app estiver offline, ele le os dados) Tj
+T*
+(locais e mostra o preco como "a consultar".) Tj
 T*
 () Tj
 T*
@@ -41,11 +43,15 @@ T*
 T*
 (CardapioDBHelper.kt: cria e manipula o banco SQLite.) Tj
 T*
+(MockCardapioServer.kt: cria um servidor HTTP mock dentro do app para entregar o JSON e as) Tj
+T*
+(imagens.) Tj
+T*
 (activity_main.xml: tem o ScrollView e o LinearLayout onde os itens sao adicionados.) Tj
 T*
 (AndroidManifest.xml: declara permissao de internet e permissao para verificar estado de rede.) Tj
 T*
-(cardapio.json: arquivo remoto simulado com os dados do cardapio.) Tj
+(assets/foto1.jpg a assets/foto4.jpg: imagens usadas pelo mock HTTP interno.) Tj
 T*
 () Tj
 T*
@@ -55,21 +61,23 @@ T*
 T*
 (2. O app pega o LinearLayout do XML e prepara o banco SQLite.) Tj
 T*
-(3. A funcao isOnline verifica se existe conexao.) Tj
+(3. O app verifica se existe conexao de internet.) Tj
 T*
-(4. Se houver conexao, o app chama carregarDadosOnline.) Tj
+(4. Se houver internet, ele inicia o MockCardapioServer.) Tj
 T*
-(5. carregarDadosOnline baixa o JSON, percorre os itens, baixa as imagens e salva tudo) Tj
+(5. O app chama carregarDadosOnline e acessa o JSON por HTTP em 127.0.0.1.) Tj
+T*
+(6. carregarDadosOnline baixa o JSON, percorre os itens, baixa as imagens e salva tudo) Tj
 T*
 (localmente.) Tj
 T*
-(6. Depois mostra os cards com nome, foto e preco.) Tj
+(7. Depois mostra os cards com nome, foto e preco.) Tj
 T*
-(7. Se houver erro ou estiver offline, o app chama carregarDadosOffline.) Tj
+(8. Se nao houver internet, o app chama carregarDadosOffline.) Tj
 T*
-(8. carregarDadosOffline le o SQLite e mostra as imagens salvas.) Tj
+(9. carregarDadosOffline le o SQLite e mostra as imagens salvas.) Tj
 T*
-(9. No modo offline, o preco real nao aparece; aparece "a consultar".) Tj
+(10. No modo offline, o preco real nao aparece; aparece "a consultar".) Tj
 T*
 () Tj
 T*
@@ -115,6 +123,19 @@ T*
 T*
 () Tj
 T*
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 19 0 R >> >> /Contents 6 0 R >>
+endobj
+6 0 obj
+<< /Length 2202 >>
+stream
+BT
+/F1 10 Tf
+13 TL
+45 760 Td
 (var imagemLocal: String = "") Tj
 T*
 (Guarda o caminho da imagem salva no celular.) Tj
@@ -123,19 +144,6 @@ T*
 T*
 (class MainActivity : AppCompatActivity\(\)) Tj
 T*
-ET
-endstream
-endobj
-5 0 obj
-<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 19 0 R >> >> /Contents 6 0 R >>
-endobj
-6 0 obj
-<< /Length 2217 >>
-stream
-BT
-/F1 10 Tf
-13 TL
-45 760 Td
 (Define a tela principal. O simbolo dois pontos indica heranca. A MainActivity herda recursos de) Tj
 T*
 (AppCompatActivity.) Tj
@@ -164,11 +172,9 @@ T*
 T*
 () Tj
 T*
-(private val cardapioUrl = "http://10.0.2.2:8080/cardapio.json") Tj
+(private lateinit var cardapioUrl: String) Tj
 T*
-(Guarda o endereco do JSON. No emulador Android, 10.0.2.2 aponta para o computador onde o) Tj
-T*
-(servidor local esta rodando.) Tj
+(Guarda o endereco do JSON. Ele recebe o endereco criado pelo servidor mock interno.) Tj
 T*
 () Tj
 T*
@@ -202,47 +208,41 @@ T*
 T*
 () Tj
 T*
-(if \(isOnline\(\)\)) Tj
+(temConexaoInternet\(\)) Tj
 T*
-(Chama a funcao que verifica internet. Se retornar true, carrega online.) Tj
+(Verifica se existe rede com internet. Se existir, o app usa o mock HTTP interno. Se nao) Tj
+T*
+(existir, usa o cache local.) Tj
+T*
+() Tj
+T*
+(mockServer = MockCardapioServer\(this\)) Tj
+T*
+(Cria o servidor mock HTTP dentro do app.) Tj
+T*
+() Tj
+T*
+(mockServer.start\(\)) Tj
+T*
+(Inicia o servidor mock.) Tj
+T*
+() Tj
+T*
+(cardapioUrl = mockServer!!.getCardapioUrl\(\)) Tj
+T*
+(Pega a URL do JSON mock. A URL usa 127.0.0.1 com uma porta interna criada automaticamente.) Tj
 T*
 () Tj
 T*
 (carregarDadosOnline\(\)) Tj
 T*
-(Inicia a carga pelo servidor.) Tj
+(Inicia a carga pelo mock HTTP.) Tj
 T*
 () Tj
 T*
-(carregarDadosOffline\(\)) Tj
+(carregarDadosOnline) Tj
 T*
-(Inicia a carga pelo banco local quando nao ha internet.) Tj
-T*
-() Tj
-T*
-(isOnline) Tj
-T*
-(Verifica se existe uma rede ativa com capacidade de internet.) Tj
-T*
-() Tj
-T*
-(getSystemService\(Context.CONNECTIVITY_SERVICE\) as ConnectivityManager) Tj
-T*
-(Pega o servico de conectividade do Android e converte para ConnectivityManager.) Tj
-T*
-() Tj
-T*
-(val network = connectivityManager.activeNetwork) Tj
-T*
-(Pega a rede ativa atual.) Tj
-T*
-() Tj
-T*
-(if \(network == null\) return false) Tj
-T*
-(Se nao existir rede ativa, retorna falso.) Tj
-T*
-() Tj
+(Funcao responsavel por buscar dados no servidor.) Tj
 T*
 ET
 endstream
@@ -251,28 +251,12 @@ endobj
 << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 19 0 R >> >> /Contents 8 0 R >>
 endobj
 8 0 obj
-<< /Length 1957 >>
+<< /Length 1787 >>
 stream
 BT
 /F1 10 Tf
 13 TL
 45 760 Td
-(val activeNetwork = connectivityManager.getNetworkCapabilities\(network\)) Tj
-T*
-(Pega as capacidades da rede, como ter acesso a internet.) Tj
-T*
-() Tj
-T*
-(return activeNetwork.hasCapability\(NetworkCapabilities.NET_CAPABILITY_INTERNET\)) Tj
-T*
-(Retorna verdadeiro se a rede tiver capacidade de internet.) Tj
-T*
-() Tj
-T*
-(carregarDadosOnline) Tj
-T*
-(Funcao responsavel por buscar dados no servidor.) Tj
-T*
 () Tj
 T*
 (Thread { ... }.start\(\)) Tj
@@ -365,19 +349,6 @@ T*
 T*
 (Salva a lista no SQLite.) Tj
 T*
-ET
-endstream
-endobj
-9 0 obj
-<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 19 0 R >> >> /Contents 10 0 R >>
-endobj
-10 0 obj
-<< /Length 1803 >>
-stream
-BT
-/F1 10 Tf
-13 TL
-45 760 Td
 () Tj
 T*
 (mainHandler.post) Tj
@@ -394,6 +365,19 @@ T*
 T*
 (catch \(e: Exception\)) Tj
 T*
+ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 19 0 R >> >> /Contents 10 0 R >>
+endobj
+10 0 obj
+<< /Length 1851 >>
+stream
+BT
+/F1 10 Tf
+13 TL
+45 760 Td
 (Se qualquer erro acontecer, cai aqui.) Tj
 T*
 () Tj
@@ -486,19 +470,6 @@ T*
 T*
 (Abre um arquivo privado do app para salvar a imagem.) Tj
 T*
-ET
-endstream
-endobj
-11 0 obj
-<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 19 0 R >> >> /Contents 12 0 R >>
-endobj
-12 0 obj
-<< /Length 1766 >>
-stream
-BT
-/F1 10 Tf
-13 TL
-45 760 Td
 () Tj
 T*
 (bitmap.compress\(Bitmap.CompressFormat.JPEG, 90, outputStream\)) Tj
@@ -515,6 +486,19 @@ T*
 T*
 (salvarCargaLocal) Tj
 T*
+ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 19 0 R >> >> /Contents 12 0 R >>
+endobj
+12 0 obj
+<< /Length 1723 >>
+stream
+BT
+/F1 10 Tf
+13 TL
+45 760 Td
 (Limpa o banco e grava a nova carga online.) Tj
 T*
 () Tj
@@ -607,19 +591,6 @@ T*
 T*
 (Definem cor de fundo e espacamento.) Tj
 T*
-ET
-endstream
-endobj
-13 0 obj
-<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 19 0 R >> >> /Contents 14 0 R >>
-endobj
-14 0 obj
-<< /Length 1688 >>
-stream
-BT
-/F1 10 Tf
-13 TL
-45 760 Td
 () Tj
 T*
 (adicionarCabecalho\(online\)) Tj
@@ -636,6 +607,19 @@ T*
 T*
 (criarCardItem\(item, online\)) Tj
 T*
+ET
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 19 0 R >> >> /Contents 14 0 R >>
+endobj
+14 0 obj
+<< /Length 1711 >>
+stream
+BT
+/F1 10 Tf
+13 TL
+45 760 Td
 (Cria o visual de cada prato.) Tj
 T*
 () Tj
@@ -728,19 +712,6 @@ T*
 T*
 (Mostra o nome do prato.) Tj
 T*
-ET
-endstream
-endobj
-15 0 obj
-<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 19 0 R >> >> /Contents 16 0 R >>
-endobj
-16 0 obj
-<< /Length 1667 >>
-stream
-BT
-/F1 10 Tf
-13 TL
-45 760 Td
 () Tj
 T*
 (if \(online\)) Tj
@@ -757,6 +728,19 @@ T*
 T*
 (else preco.text = "a consultar") Tj
 T*
+ET
+endstream
+endobj
+15 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 19 0 R >> >> /Contents 16 0 R >>
+endobj
+16 0 obj
+<< /Length 1668 >>
+stream
+BT
+/F1 10 Tf
+13 TL
+45 760 Td
 (No offline, atende ao requisito e nao mostra o preco.) Tj
 T*
 () Tj
@@ -849,19 +833,6 @@ T*
 T*
 (ContentValues) Tj
 T*
-ET
-endstream
-endobj
-17 0 obj
-<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 19 0 R >> >> /Contents 18 0 R >>
-endobj
-18 0 obj
-<< /Length 1885 >>
-stream
-BT
-/F1 10 Tf
-13 TL
-45 760 Td
 (Estrutura usada para mandar valores para o SQLite.) Tj
 T*
 () Tj
@@ -878,6 +849,19 @@ T*
 T*
 () Tj
 T*
+ET
+endstream
+endobj
+17 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 19 0 R >> >> /Contents 18 0 R >>
+endobj
+18 0 obj
+<< /Length 2473 >>
+stream
+BT
+/F1 10 Tf
+13 TL
+45 760 Td
 (limparBanco) Tj
 T*
 (Executa DELETE FROM pratos para remover registros antigos.) Tj
@@ -914,33 +898,75 @@ T*
 T*
 () Tj
 T*
+(MOCKCARDAPIOSERVER.KT) Tj
+T*
+(Essa classe cria um servidor HTTP simples dentro do app.) Tj
+T*
+() Tj
+T*
+(ServerSocket\(0, 50, localAddress\)) Tj
+T*
+(Cria um servidor local. O valor 0 faz o Android escolher uma porta livre automaticamente.) Tj
+T*
+() Tj
+T*
+(getCardapioUrl\(\)) Tj
+T*
+(Retorna a URL do JSON mock, por exemplo http://127.0.0.1:porta/cardapio.json.) Tj
+T*
+() Tj
+T*
+(atenderCliente) Tj
+T*
+(Le a requisicao HTTP recebida e decide se deve devolver o JSON ou uma imagem.) Tj
+T*
+() Tj
+T*
+(montarJsonCardapio) Tj
+T*
+(Monta o JSON do cardapio com 4 registros e URLs das imagens.) Tj
+T*
+() Tj
+T*
+(enviarAsset) Tj
+T*
+(Le as imagens da pasta assets e devolve por HTTP.) Tj
+T*
+() Tj
+T*
+(enviarResposta) Tj
+T*
+(Monta a resposta HTTP com status, tipo de conteudo e corpo da resposta.) Tj
+T*
+() Tj
+T*
 (COMO DEMONSTRAR) Tj
 T*
-(1. Abrir a pasta servidor-cardapio.) Tj
+(1. Abrir o app pelo Android Studio com internet ligada.) Tj
 T*
-(2. Rodar npx http-server -p 8080.) Tj
+(2. Mostrar que ele carrega nome, preco e foto pelo mock HTTP interno.) Tj
 T*
-(3. Abrir o app no emulador.) Tj
+(3. Fechar o app.) Tj
 T*
-(4. Mostrar que ele carrega nome, preco e foto.) Tj
+(4. Desligar a internet do emulador.) Tj
 T*
-(5. Fechar o servidor.) Tj
+(5. Abrir o app novamente.) Tj
 T*
-(6. Abrir o app novamente.) Tj
+(6. Mostrar que os dados continuam aparecendo pelo SQLite e pelas imagens locais.) Tj
 T*
-(7. Mostrar que os dados continuam aparecendo pelo SQLite e pelas imagens locais.) Tj
-T*
-(8. Mostrar que no modo offline o preco aparece como "a consultar".) Tj
+(7. Mostrar que no modo offline o preco aparece como "a consultar".) Tj
 T*
 () Tj
 T*
 (FRASE RESUMO PARA APRESENTAR) Tj
 T*
-(O app possui dois fluxos. No fluxo online, ele baixa o JSON remoto, le os pratos, baixa as) Tj
+(O app possui dois fluxos. No fluxo online, ele usa um servidor mock HTTP interno para entregar) Tj
 T*
-(fotos e salva tudo localmente. No fluxo offline, ele le os dados do SQLite, usa as imagens) Tj
+(JSON e imagens, le os pratos, baixa as fotos e salva tudo localmente. No fluxo offline, ele le) Tj
 T*
-(salvas no sistema de arquivos e esconde o preco, exibindo "a consultar".) Tj
+(os dados do SQLite, usa as imagens salvas no sistema de arquivos e esconde o preco, exibindo "a) Tj
+T*
+(consultar".) Tj
 T*
 ET
 endstream
@@ -955,23 +981,23 @@ xref
 0000000058 00000 n 
 0000000163 00000 n 
 0000000290 00000 n 
-0000003100 00000 n 
-0000003227 00000 n 
-0000005496 00000 n 
-0000005623 00000 n 
-0000007632 00000 n 
-0000007760 00000 n 
-0000009616 00000 n 
-0000009745 00000 n 
-0000011564 00000 n 
-0000011693 00000 n 
-0000013434 00000 n 
-0000013563 00000 n 
-0000015283 00000 n 
-0000015412 00000 n 
-0000017350 00000 n 
+0000003216 00000 n 
+0000003343 00000 n 
+0000005597 00000 n 
+0000005724 00000 n 
+0000007563 00000 n 
+0000007691 00000 n 
+0000009595 00000 n 
+0000009724 00000 n 
+0000011500 00000 n 
+0000011629 00000 n 
+0000013393 00000 n 
+0000013522 00000 n 
+0000015243 00000 n 
+0000015372 00000 n 
+0000017898 00000 n 
 trailer
 << /Size 20 /Root 1 0 R >>
 startxref
-17421
+17969
 %%EOF
