@@ -1,0 +1,1197 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [ 3 0 R 5 0 R 7 0 R 9 0 R 11 0 R 13 0 R 15 0 R 17 0 R 19 0 R 21 0 R ] /Count 10 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 23 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 2279 >>
+stream
+BT
+/F1 10 Tf
+13 TL
+45 760 Td
+(EXPLICACAO ORDENADA DO CODIGO - APP CARDAPIO) Tj
+T*
+() Tj
+T*
+(RESUMO DA LOGICA) Tj
+T*
+(O app tem dois modos. Com internet, ele inicia um servidor mock HTTP dentro do proprio app,) Tj
+T*
+(busca um JSON por HTTP, baixa as imagens desse mock, salva os dados no SQLite e salva as fotos) Tj
+T*
+(no sistema de arquivos. Sem internet, ele le o SQLite e mostra as fotos salvas. No offline, o) Tj
+T*
+(preco vira "a consultar".) Tj
+T*
+() Tj
+T*
+(ARQUIVOS PRINCIPAIS) Tj
+T*
+(1. MainActivity.kt: tela principal, fluxo online/offline, leitura JSON, download das imagens e) Tj
+T*
+(montagem dos cards.) Tj
+T*
+(2. MockCardapioServer.kt: servidor HTTP mock interno que entrega o JSON e as imagens.) Tj
+T*
+(3. CardapioDBHelper.kt: banco SQLite.) Tj
+T*
+(4. activity_main.xml: tela base com ScrollView e LinearLayout.) Tj
+T*
+(5. AndroidManifest.xml: permissoes de internet e estado da rede.) Tj
+T*
+(6. assets/foto1.jpg a foto4.jpg: imagens usadas pelo mock.) Tj
+T*
+() Tj
+T*
+(MAINACTIVITY.KT) Tj
+T*
+() Tj
+T*
+(package com.example.trab_mobile_m2) Tj
+T*
+(Define o pacote da classe.) Tj
+T*
+() Tj
+T*
+(imports) Tj
+T*
+(Trazem classes prontas do Android e Java, como TextView, ImageView, HttpURLConnection,) Tj
+T*
+(JSONArray, File e SQLite.) Tj
+T*
+() Tj
+T*
+(class CardapioItem) Tj
+T*
+(Classe simples para representar um prato.) Tj
+T*
+() Tj
+T*
+(var id: Int = 0) Tj
+T*
+(Guarda o id do prato.) Tj
+T*
+() Tj
+T*
+(var nome: String = "") Tj
+T*
+(Guarda o nome do prato.) Tj
+T*
+() Tj
+T*
+(var preco: Double = 0.0) Tj
+T*
+(Guarda o preco com casas decimais.) Tj
+T*
+() Tj
+T*
+(var imagemLocal: String = "") Tj
+T*
+(Guarda o caminho da imagem salva no armazenamento interno.) Tj
+T*
+() Tj
+T*
+(class MainActivity : AppCompatActivity\(\)) Tj
+T*
+(Define a tela principal. O sinal ":" indica heranca.) Tj
+T*
+() Tj
+T*
+(private lateinit var containerCardapio: LinearLayout) Tj
+T*
+(Variavel que recebe o LinearLayout do XML. lateinit significa que sera inicializada depois.) Tj
+T*
+() Tj
+T*
+(private lateinit var dbHelper: CardapioDBHelper) Tj
+T*
+(Objeto usado para acessar o SQLite.) Tj
+T*
+() Tj
+T*
+(private var mockServer: MockCardapioServer? = null) Tj
+T*
+(Objeto do servidor mock. O "?" indica que pode ser nulo.) Tj
+T*
+() Tj
+T*
+(private val mainHandler = Handler\(Looper.getMainLooper\(\)\)) Tj
+T*
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 23 0 R >> >> /Contents 6 0 R >>
+endobj
+6 0 obj
+<< /Length 1902 >>
+stream
+BT
+/F1 10 Tf
+13 TL
+45 760 Td
+(Permite voltar para a thread principal antes de mexer na interface.) Tj
+T*
+() Tj
+T*
+(private lateinit var cardapioUrl: String) Tj
+T*
+(Guarda a URL do JSON gerada pelo servidor mock.) Tj
+T*
+() Tj
+T*
+(onCreate) Tj
+T*
+(Funcao chamada quando a tela abre.) Tj
+T*
+() Tj
+T*
+(super.onCreate\(savedInstanceState\)) Tj
+T*
+(Executa a inicializacao padrao da Activity.) Tj
+T*
+() Tj
+T*
+(setContentView\(R.layout.activity_main\)) Tj
+T*
+(Liga o codigo Kotlin ao layout XML.) Tj
+T*
+() Tj
+T*
+(containerCardapio = findViewById\(R.id.container_cardapio\)) Tj
+T*
+(Busca o LinearLayout do XML.) Tj
+T*
+() Tj
+T*
+(dbHelper = CardapioDBHelper\(this\)) Tj
+T*
+(Cria o helper do SQLite.) Tj
+T*
+() Tj
+T*
+(if \(temConexaoInternet\(\)\)) Tj
+T*
+(Verifica se existe internet para decidir entre online e offline.) Tj
+T*
+() Tj
+T*
+(mockServer = MockCardapioServer\(this\)) Tj
+T*
+(Cria o servidor mock interno.) Tj
+T*
+() Tj
+T*
+(mockServer!!.start\(\)) Tj
+T*
+(Inicia o servidor mock. O "!!" indica que o objeto nao deve ser nulo nesse momento.) Tj
+T*
+() Tj
+T*
+(cardapioUrl = mockServer!!.getCardapioUrl\(\)) Tj
+T*
+(Pega a URL HTTP do JSON mock.) Tj
+T*
+() Tj
+T*
+(carregarDadosOnline\(\)) Tj
+T*
+(Busca os dados por HTTP.) Tj
+T*
+() Tj
+T*
+(else carregarDadosOffline\(\)) Tj
+T*
+(Se nao houver internet, carrega os dados salvos localmente.) Tj
+T*
+() Tj
+T*
+(onDestroy) Tj
+T*
+(Funcao chamada quando a tela e destruida.) Tj
+T*
+() Tj
+T*
+(mockServer?.stop\(\)) Tj
+T*
+(Para o servidor mock se ele existir. O "?." so chama se nao for nulo.) Tj
+T*
+() Tj
+T*
+(temConexaoInternet) Tj
+T*
+(Verifica se o Android possui uma rede ativa com internet.) Tj
+T*
+() Tj
+T*
+(getSystemService\(Context.CONNECTIVITY_SERVICE\) as ConnectivityManager) Tj
+T*
+(Pega o servico de conectividade do Android.) Tj
+T*
+() Tj
+T*
+(connectivityManager.activeNetwork) Tj
+T*
+(Pega a rede ativa.) Tj
+T*
+() Tj
+T*
+(if \(network == null\) return false) Tj
+T*
+ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 23 0 R >> >> /Contents 8 0 R >>
+endobj
+8 0 obj
+<< /Length 1723 >>
+stream
+BT
+/F1 10 Tf
+13 TL
+45 760 Td
+(Se nao existe rede, retorna falso.) Tj
+T*
+() Tj
+T*
+(getNetworkCapabilities\(network\)) Tj
+T*
+(Pega as capacidades da rede.) Tj
+T*
+() Tj
+T*
+(hasCapability\(NetworkCapabilities.NET_CAPABILITY_INTERNET\)) Tj
+T*
+(Retorna verdadeiro se a rede tem internet.) Tj
+T*
+() Tj
+T*
+(carregarDadosOnline) Tj
+T*
+(Funcao responsavel pelo fluxo online.) Tj
+T*
+() Tj
+T*
+(Thread { ... }.start\(\)) Tj
+T*
+(Cria uma thread separada porque HTTP nao deve rodar na thread principal.) Tj
+T*
+() Tj
+T*
+(try) Tj
+T*
+(Tenta executar a carga online.) Tj
+T*
+() Tj
+T*
+(val jsonString = baixarTexto\(cardapioUrl\)) Tj
+T*
+(Baixa o JSON como texto.) Tj
+T*
+() Tj
+T*
+(val jsonArray = JSONArray\(jsonString\)) Tj
+T*
+(Transforma o texto JSON em uma lista JSON.) Tj
+T*
+() Tj
+T*
+(val itens = ArrayList<CardapioItem>\(\)) Tj
+T*
+(Cria uma lista vazia de pratos.) Tj
+T*
+() Tj
+T*
+(for \(i in 0 until jsonArray.length\(\)\)) Tj
+T*
+(Percorre todos os itens do JSON.) Tj
+T*
+() Tj
+T*
+(val itemJson = jsonArray.getJSONObject\(i\)) Tj
+T*
+(Pega o objeto JSON da posicao atual.) Tj
+T*
+() Tj
+T*
+(val item = CardapioItem\(\)) Tj
+T*
+(Cria um prato vazio.) Tj
+T*
+() Tj
+T*
+(item.id = itemJson.getInt\("id"\)) Tj
+T*
+(Le o id do JSON.) Tj
+T*
+() Tj
+T*
+(item.nome = itemJson.getString\("nome"\)) Tj
+T*
+(Le o nome do JSON.) Tj
+T*
+() Tj
+T*
+(item.preco = itemJson.getDouble\("preco"\)) Tj
+T*
+(Le o preco do JSON.) Tj
+T*
+() Tj
+T*
+(val urlImagem = itemJson.getString\("url_imagem"\)) Tj
+T*
+(Le a URL da imagem no JSON.) Tj
+T*
+() Tj
+T*
+(item.imagemLocal = baixarESalvarImagem\(...\)) Tj
+T*
+(Baixa a imagem por HTTP e guarda o caminho local.) Tj
+T*
+() Tj
+T*
+(itens.add\(item\)) Tj
+T*
+(Adiciona o prato na lista.) Tj
+T*
+() Tj
+T*
+(salvarCargaLocal\(itens\)) Tj
+T*
+ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 23 0 R >> >> /Contents 10 0 R >>
+endobj
+10 0 obj
+<< /Length 1664 >>
+stream
+BT
+/F1 10 Tf
+13 TL
+45 760 Td
+(Salva a lista no SQLite.) Tj
+T*
+() Tj
+T*
+(mainHandler.post { ... }) Tj
+T*
+(Volta para a thread principal para atualizar a tela.) Tj
+T*
+() Tj
+T*
+(exibirCardapioNaTela\(itens, true\)) Tj
+T*
+(Mostra os cards com preco, porque esta online.) Tj
+T*
+() Tj
+T*
+(catch \(e: Exception\)) Tj
+T*
+(Se der erro no online, executa o bloco de erro.) Tj
+T*
+() Tj
+T*
+(carregarDadosOffline\(\)) Tj
+T*
+(Plano B: carrega dados locais.) Tj
+T*
+() Tj
+T*
+(baixarTexto\(urlString\)) Tj
+T*
+(Funcao que baixa texto de uma URL.) Tj
+T*
+() Tj
+T*
+(URL\(urlString\)) Tj
+T*
+(Transforma texto em URL.) Tj
+T*
+() Tj
+T*
+(openConnection\(\) as HttpURLConnection) Tj
+T*
+(Abre uma conexao HTTP.) Tj
+T*
+() Tj
+T*
+(requestMethod = "GET") Tj
+T*
+(Define que a requisicao e para buscar dados.) Tj
+T*
+() Tj
+T*
+(connectTimeout e readTimeout) Tj
+T*
+(Definem o tempo maximo de conexao e leitura.) Tj
+T*
+() Tj
+T*
+(responseCode) Tj
+T*
+(Codigo HTTP da resposta.) Tj
+T*
+() Tj
+T*
+(if \(codigoResposta < 200 || codigoResposta > 299\)) Tj
+T*
+(Se nao for sucesso HTTP, lanca erro.) Tj
+T*
+() Tj
+T*
+(BufferedReader\(InputStreamReader\(inputStream\)\)) Tj
+T*
+(Prepara a leitura do texto recebido.) Tj
+T*
+() Tj
+T*
+(reader.readText\(\)) Tj
+T*
+(Le todo o JSON.) Tj
+T*
+() Tj
+T*
+(reader.close\(\) e inputStream.close\(\)) Tj
+T*
+(Fecham os recursos.) Tj
+T*
+() Tj
+T*
+(finally { conexao.disconnect\(\) }) Tj
+T*
+(Fecha a conexao mesmo com erro.) Tj
+T*
+() Tj
+T*
+(baixarESalvarImagem) Tj
+T*
+(Baixa uma imagem por HTTP e salva no armazenamento interno.) Tj
+T*
+() Tj
+T*
+(BitmapFactory.decodeStream\(inputStream\)) Tj
+T*
+(Transforma os bytes da imagem em Bitmap.) Tj
+T*
+() Tj
+T*
+(if \(bitmap == null\)) Tj
+T*
+ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 23 0 R >> >> /Contents 12 0 R >>
+endobj
+12 0 obj
+<< /Length 1610 >>
+stream
+BT
+/F1 10 Tf
+13 TL
+45 760 Td
+(Se a imagem nao for valida, lanca erro.) Tj
+T*
+() Tj
+T*
+(openFileOutput\(nomeArquivo, Context.MODE_PRIVATE\)) Tj
+T*
+(Cria arquivo privado do app.) Tj
+T*
+() Tj
+T*
+(bitmap.compress\(Bitmap.CompressFormat.JPEG, 90, outputStream\)) Tj
+T*
+(Salva a imagem em JPEG com qualidade 90.) Tj
+T*
+() Tj
+T*
+(File\(filesDir, nomeArquivo\).absolutePath) Tj
+T*
+(Retorna o caminho completo da imagem salva.) Tj
+T*
+() Tj
+T*
+(salvarCargaLocal) Tj
+T*
+(Salva os pratos no SQLite.) Tj
+T*
+() Tj
+T*
+(dbHelper.limparBanco\(\)) Tj
+T*
+(Apaga dados antigos para nao duplicar.) Tj
+T*
+() Tj
+T*
+(for \(i in 0 until itens.size\)) Tj
+T*
+(Percorre a lista de pratos.) Tj
+T*
+() Tj
+T*
+(dbHelper.salvarPrato\(...\)) Tj
+T*
+(Salva cada prato no banco.) Tj
+T*
+() Tj
+T*
+(carregarDadosOffline) Tj
+T*
+(Le os pratos salvos no SQLite.) Tj
+T*
+() Tj
+T*
+(dbHelper.readableDatabase) Tj
+T*
+(Abre o banco para leitura.) Tj
+T*
+() Tj
+T*
+(val sql = "SELECT ...") Tj
+T*
+(Monta a consulta SQL.) Tj
+T*
+() Tj
+T*
+(db.rawQuery\(sql, null\)) Tj
+T*
+(Executa a consulta e retorna um Cursor.) Tj
+T*
+() Tj
+T*
+(getColumnIndexOrThrow) Tj
+T*
+(Descobre a posicao de cada coluna.) Tj
+T*
+() Tj
+T*
+(while \(cursor.moveToNext\(\)\)) Tj
+T*
+(Percorre as linhas do resultado.) Tj
+T*
+() Tj
+T*
+(cursor.getInt, getString, getDouble) Tj
+T*
+(Le os valores do banco.) Tj
+T*
+() Tj
+T*
+(itens.add\(item\)) Tj
+T*
+(Adiciona o item local na lista.) Tj
+T*
+() Tj
+T*
+(cursor.close\(\) e db.close\(\)) Tj
+T*
+(Fecham cursor e banco.) Tj
+T*
+() Tj
+T*
+(exibirCardapioNaTela\(itens, false\)) Tj
+T*
+(Mostra os dados em modo offline.) Tj
+T*
+() Tj
+T*
+(exibirCardapioNaTela) Tj
+T*
+ET
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 23 0 R >> >> /Contents 14 0 R >>
+endobj
+14 0 obj
+<< /Length 1563 >>
+stream
+BT
+/F1 10 Tf
+13 TL
+45 760 Td
+(Monta a interface.) Tj
+T*
+() Tj
+T*
+(containerCardapio.removeAllViews\(\)) Tj
+T*
+(Limpa a tela antes de desenhar novamente.) Tj
+T*
+() Tj
+T*
+(setBackgroundColor e setPadding) Tj
+T*
+(Define cor de fundo e espacamento.) Tj
+T*
+() Tj
+T*
+(adicionarCabecalho\(online\)) Tj
+T*
+(Adiciona titulo e status.) Tj
+T*
+() Tj
+T*
+(if \(lista.isEmpty\(\)\)) Tj
+T*
+(Se nao houver dados locais, mostra mensagem.) Tj
+T*
+() Tj
+T*
+(for \(i in 0 until lista.size\)) Tj
+T*
+(Percorre os itens.) Tj
+T*
+() Tj
+T*
+(criarCardItem\(item, online\)) Tj
+T*
+(Cria o card de cada prato.) Tj
+T*
+() Tj
+T*
+(adicionarCabecalho) Tj
+T*
+(Cria o titulo e o texto de status.) Tj
+T*
+() Tj
+T*
+(TextView\(this\)) Tj
+T*
+(Cria texto por codigo.) Tj
+T*
+() Tj
+T*
+(text, textSize, typeface, setTextColor, gravity) Tj
+T*
+(Configuram conteudo, tamanho, negrito, cor e alinhamento.) Tj
+T*
+() Tj
+T*
+(adicionarMensagemVazia) Tj
+T*
+(Mostra aviso se nao ha cache local.) Tj
+T*
+() Tj
+T*
+(criarCardItem) Tj
+T*
+(Cria o card visual com imagem, nome e preco.) Tj
+T*
+() Tj
+T*
+(LinearLayout\(this\)) Tj
+T*
+(Cria o card.) Tj
+T*
+() Tj
+T*
+(card.orientation = LinearLayout.VERTICAL) Tj
+T*
+(Organiza imagem, nome e preco um embaixo do outro.) Tj
+T*
+() Tj
+T*
+(GradientDrawable) Tj
+T*
+(Cria fundo branco com borda.) Tj
+T*
+() Tj
+T*
+(ImageView\(this\)) Tj
+T*
+(Cria o componente de imagem.) Tj
+T*
+() Tj
+T*
+(imagem.scaleType = CENTER_CROP) Tj
+T*
+(Faz a imagem preencher o espaco.) Tj
+T*
+() Tj
+T*
+(File\(item.imagemLocal\)) Tj
+T*
+(Aponta para a imagem salva.) Tj
+T*
+() Tj
+T*
+(if \(arquivoFoto.exists\(\)\)) Tj
+T*
+ET
+endstream
+endobj
+15 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 23 0 R >> >> /Contents 16 0 R >>
+endobj
+16 0 obj
+<< /Length 1560 >>
+stream
+BT
+/F1 10 Tf
+13 TL
+45 760 Td
+(Verifica se a imagem existe.) Tj
+T*
+() Tj
+T*
+(BitmapFactory.decodeFile) Tj
+T*
+(Le a imagem salva.) Tj
+T*
+() Tj
+T*
+(imagem.setImageBitmap\(bitmap\)) Tj
+T*
+(Mostra a foto no card.) Tj
+T*
+() Tj
+T*
+(nome.text = item.nome) Tj
+T*
+(Mostra o nome do prato.) Tj
+T*
+() Tj
+T*
+(if \(online\)) Tj
+T*
+(Decide se mostra preco real ou "a consultar".) Tj
+T*
+() Tj
+T*
+(String.format\(... "R$ %.2f", item.preco\)) Tj
+T*
+(Formata o preco com duas casas.) Tj
+T*
+() Tj
+T*
+(else preco.text = "a consultar") Tj
+T*
+(Atende ao requisito offline.) Tj
+T*
+() Tj
+T*
+(return card) Tj
+T*
+(Devolve o card pronto.) Tj
+T*
+() Tj
+T*
+(dp\(value\)) Tj
+T*
+(Converte valores para dp, unidade visual do Android.) Tj
+T*
+() Tj
+T*
+(MOCKCARDAPIOSERVER.KT) Tj
+T*
+() Tj
+T*
+(class MockCardapioServer\(private val context: Context\)) Tj
+T*
+(Classe que cria o servidor mock. Recebe Context para acessar assets.) Tj
+T*
+() Tj
+T*
+(serverSocket) Tj
+T*
+(Objeto que escuta requisicoes HTTP.) Tj
+T*
+() Tj
+T*
+(running) Tj
+T*
+(Controla se o servidor esta rodando.) Tj
+T*
+() Tj
+T*
+(port) Tj
+T*
+(Guarda a porta escolhida automaticamente.) Tj
+T*
+() Tj
+T*
+(start\(\)) Tj
+T*
+(Inicia o servidor.) Tj
+T*
+() Tj
+T*
+(ServerSocket\(0, 50, localAddress\)) Tj
+T*
+(Cria servidor em 127.0.0.1. O 0 escolhe uma porta livre.) Tj
+T*
+() Tj
+T*
+(Thread { while \(running\) ... }.start\(\)) Tj
+T*
+(Deixa o servidor aguardando requisicoes em segundo plano.) Tj
+T*
+() Tj
+T*
+(accept\(\)) Tj
+T*
+(Espera um cliente conectar.) Tj
+T*
+() Tj
+T*
+(atenderCliente\(client\)) Tj
+T*
+(Atende cada requisicao recebida.) Tj
+T*
+ET
+endstream
+endobj
+17 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 23 0 R >> >> /Contents 18 0 R >>
+endobj
+18 0 obj
+<< /Length 1463 >>
+stream
+BT
+/F1 10 Tf
+13 TL
+45 760 Td
+() Tj
+T*
+(stop\(\)) Tj
+T*
+(Para o servidor.) Tj
+T*
+() Tj
+T*
+(getCardapioUrl\(\)) Tj
+T*
+(Retorna a URL do JSON mock.) Tj
+T*
+() Tj
+T*
+(input.read\(request\)) Tj
+T*
+(Le a requisicao HTTP.) Tj
+T*
+() Tj
+T*
+(firstLine.split\(" "\)) Tj
+T*
+(Separa metodo, caminho e versao HTTP.) Tj
+T*
+() Tj
+T*
+(if \(path == "/cardapio.json"\)) Tj
+T*
+(Se pediu o JSON, devolve o cardapio.) Tj
+T*
+() Tj
+T*
+(else if \(path == "/foto1.jpg"\)) Tj
+T*
+(Se pediu uma imagem, devolve o asset correspondente.) Tj
+T*
+() Tj
+T*
+(montarJsonCardapio\(\)) Tj
+T*
+(Monta o JSON com 4 registros.) Tj
+T*
+() Tj
+T*
+(baseUrl) Tj
+T*
+(Usado para montar as URLs das imagens no proprio servidor mock.) Tj
+T*
+() Tj
+T*
+(enviarAsset) Tj
+T*
+(Le uma imagem da pasta assets e devolve por HTTP.) Tj
+T*
+() Tj
+T*
+(context.assets.open\(assetName\)) Tj
+T*
+(Abre o arquivo dentro de assets.) Tj
+T*
+() Tj
+T*
+(ByteArrayOutputStream) Tj
+T*
+(Guarda os bytes da imagem antes de responder.) Tj
+T*
+() Tj
+T*
+(enviarResposta) Tj
+T*
+(Monta a resposta HTTP com status, tipo e conteudo.) Tj
+T*
+() Tj
+T*
+(Content-Type) Tj
+T*
+(Informa se a resposta e JSON, texto ou imagem.) Tj
+T*
+() Tj
+T*
+(Content-Length) Tj
+T*
+(Informa o tamanho da resposta.) Tj
+T*
+() Tj
+T*
+(CARDAPIODBHELPER.KT) Tj
+T*
+() Tj
+T*
+(class CardapioDBHelper : SQLiteOpenHelper) Tj
+T*
+(Classe que gerencia o SQLite.) Tj
+T*
+() Tj
+T*
+(DATABASE_NAME) Tj
+T*
+(Nome do banco.) Tj
+T*
+() Tj
+T*
+(DATABASE_VERSION) Tj
+T*
+(Versao do banco.) Tj
+T*
+() Tj
+T*
+ET
+endstream
+endobj
+19 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 23 0 R >> >> /Contents 20 0 R >>
+endobj
+20 0 obj
+<< /Length 1378 >>
+stream
+BT
+/F1 10 Tf
+13 TL
+45 760 Td
+(TABLE_NAME) Tj
+T*
+(Nome da tabela.) Tj
+T*
+() Tj
+T*
+(COLUMN_ID, COLUMN_NOME, COLUMN_PRECO, COLUMN_IMAGEM_LOCAL) Tj
+T*
+(Nomes das colunas.) Tj
+T*
+() Tj
+T*
+(onCreate\(db\)) Tj
+T*
+(Cria a tabela na primeira execucao.) Tj
+T*
+() Tj
+T*
+(CREATE TABLE) Tj
+T*
+(Comando SQL que cria a tabela pratos.) Tj
+T*
+() Tj
+T*
+(INTEGER PRIMARY KEY) Tj
+T*
+(Define id como chave primaria.) Tj
+T*
+() Tj
+T*
+(TEXT) Tj
+T*
+(Tipo usado para nome e caminho da imagem.) Tj
+T*
+() Tj
+T*
+(REAL) Tj
+T*
+(Tipo usado para preco.) Tj
+T*
+() Tj
+T*
+(onUpgrade) Tj
+T*
+(Executa quando a versao do banco muda.) Tj
+T*
+() Tj
+T*
+(DROP TABLE IF EXISTS) Tj
+T*
+(Apaga tabela antiga.) Tj
+T*
+() Tj
+T*
+(salvarPrato) Tj
+T*
+(Salva ou atualiza um prato.) Tj
+T*
+() Tj
+T*
+(ContentValues) Tj
+T*
+(Estrutura usada para enviar valores ao SQLite.) Tj
+T*
+() Tj
+T*
+(cv.put) Tj
+T*
+(Coloca valor em cada coluna.) Tj
+T*
+() Tj
+T*
+(insertWithOnConflict\(... CONFLICT_REPLACE\)) Tj
+T*
+(Insere ou substitui se ja existir o mesmo id.) Tj
+T*
+() Tj
+T*
+(limparBanco) Tj
+T*
+(Apaga registros antigos.) Tj
+T*
+() Tj
+T*
+(execSQL\("DELETE FROM pratos"\)) Tj
+T*
+(Executa comando SQL que limpa a tabela.) Tj
+T*
+() Tj
+T*
+(ANDROIDMANIFEST.XML) Tj
+T*
+() Tj
+T*
+(INTERNET) Tj
+T*
+(Permite requisicao HTTP.) Tj
+T*
+() Tj
+T*
+(ACCESS_NETWORK_STATE) Tj
+T*
+(Permite verificar se ha internet.) Tj
+T*
+() Tj
+T*
+(usesCleartextTraffic="true") Tj
+T*
+ET
+endstream
+endobj
+21 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 23 0 R >> >> /Contents 22 0 R >>
+endobj
+22 0 obj
+<< /Length 1119 >>
+stream
+BT
+/F1 10 Tf
+13 TL
+45 760 Td
+(Permite HTTP sem HTTPS, necessario para o mock local.) Tj
+T*
+() Tj
+T*
+(MainActivity exported true) Tj
+T*
+(Define a tela inicial do app.) Tj
+T*
+() Tj
+T*
+(ACTIVITY_MAIN.XML) Tj
+T*
+() Tj
+T*
+(ScrollView) Tj
+T*
+(Permite rolar a tela.) Tj
+T*
+() Tj
+T*
+(LinearLayout container_cardapio) Tj
+T*
+(Espaco onde os cards sao adicionados por codigo.) Tj
+T*
+() Tj
+T*
+(COMO DEMONSTRAR) Tj
+T*
+(1. Rodar o app pelo Android Studio com internet ligada.) Tj
+T*
+(2. Mostrar que aparecem 4 itens com imagem, nome e preco.) Tj
+T*
+(3. Explicar que os dados vieram de um JSON servido por mock HTTP interno.) Tj
+T*
+(4. Fechar o app.) Tj
+T*
+(5. Desligar internet do emulador.) Tj
+T*
+(6. Abrir o app de novo.) Tj
+T*
+(7. Mostrar que os dados continuam aparecendo pelo SQLite.) Tj
+T*
+(8. Mostrar que o preco virou "a consultar".) Tj
+T*
+() Tj
+T*
+(FRASE FINAL) Tj
+T*
+(Online, o app consome um JSON por HTTP vindo de um mock interno, baixa as imagens e salva tudo) Tj
+T*
+(localmente. Offline, ele consulta o SQLite e usa as imagens salvas no armazenamento interno,) Tj
+T*
+(exibindo "a consultar" no lugar do preco.) Tj
+T*
+ET
+endstream
+endobj
+23 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 24
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000178 00000 n 
+0000000305 00000 n 
+0000002636 00000 n 
+0000002763 00000 n 
+0000004717 00000 n 
+0000004844 00000 n 
+0000006619 00000 n 
+0000006747 00000 n 
+0000008464 00000 n 
+0000008593 00000 n 
+0000010256 00000 n 
+0000010385 00000 n 
+0000012001 00000 n 
+0000012130 00000 n 
+0000013743 00000 n 
+0000013872 00000 n 
+0000015388 00000 n 
+0000015517 00000 n 
+0000016948 00000 n 
+0000017077 00000 n 
+0000018249 00000 n 
+trailer
+<< /Size 24 /Root 1 0 R >>
+startxref
+18320
+%%EOF
